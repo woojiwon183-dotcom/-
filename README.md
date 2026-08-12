@@ -313,3 +313,6 @@ AI와 로봇을 활용하여
              PET      CAN     OTHER
               ↓        ↓        ↓
            수거함 A  수거함 B  수거함 C
+
+
+https://chatgpt.com/share/6a7c04c2-19a8-83ee-b2cd-c75ddf5e5cbb
