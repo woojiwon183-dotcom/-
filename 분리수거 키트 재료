@@ -1,0 +1,73 @@
+스마트 분리수거 키트 제작에 필요한 부품 목록입니다. 학생 실습용으로 구하기 쉽고 가성비가 높은 제품 위주로 구성했습니다.
+
+| 구분 | 부품명 | 수량 | 역할 및 설명 |
+| --- | --- | --- | --- |
+| **메인 보드** | 아두이노 우노 (Arduino Uno) R3 | 1개 | 센서 신호를 받아 서보모터를 제어하는 메인 컨트롤러 |
+| **카메라 & PC** | 웹캠 (Webcam) 및 PC/노트북 | 1세트 | 쓰레기 이미지를 촬영하고 AI(Teachable Machine)로 인식 |
+| **구동 모듈** | 서보모터 (SG90 또는 MG90S) | 1~2개 | AI 인식 결과에 따라 분리수거용 분류판/경사로를 회전 |
+| **센서** | 초음파 거리 센서 (HC-SR04) | 1개 | 쓰레기가 투입 위치에 들어왔는지 자동으로 감지 |
+| **알림 모듈** | RGB LED 모듈 또는 부저 (Buzzer) | 1개 | 인식 성공/실패 상태를 빛이나 소리로 사용자에게 알림 |
+| **회로 및 전원** | 브레드보드 (빵판) & 점퍼선 (M/M, M/F) | 1세트 | 부품 간 회로 연결 및 전원 분배 |
+| **회로 및 전원** | USB B타입 케이블 | 1개 | 아두이노 전원 공급 및 PC와의 시리얼 통신 연결 |
+| **외형 재료** | 우드락/폼보드, 3D 프린팅 파츠 또는 하드보드지 | 다수 | 쓰레기 투입구, 경사로, 분류 수거함 외형 제작 |
+
+---
+
+> **제작 팁:** SG90 서보모터는 토크가 약하므로 분류판 재질은 우드락이나 폼보드 같은 **가벼운 소재**를 사용하는 것이 좋습니다. 무게감이 있는 쓰레기까지 다루려면 금속 기어가 들어간 **MG90S** 모터를 추천합니다.
+부품,부품 핀 (선 색상),아두이노 우노 핀,역할
+초음파 센서 (HC-SR04),VCC,5V (브레드보드 + 라인),전원 공급 (+)
+,GND,GND (브레드보드 - 라인),전원 Ground (-)
+,Trig (트리거),Digital 2 (D2),초음파 발사 신호
+,Echo (에코),Digital 3 (D3),초음파 수신 신호
+서보모터 (SG90),VCC (빨간색),5V (브레드보드 + 라인),전원 공급 (+)
+,GND (갈색 또는 검은색),GND (브레드보드 - 라인),전원 Ground (-)
+,Signal (황색 또는 주황색),Digital 9 (D9),PWM 각도 제어 신호
+
+아두이노 C++ 코드
+#include <Servo.h>
+
+// 핀 번호 정의 (이전 회로 구성 기준)
+const int TRIG_PIN = 2;
+const int ECHO_PIN = 3;
+const int SERVO_PIN = 9;
+
+Servo myServo;
+
+void setup() {
+  Serial.begin(9600);          // 시리얼 모니터 및 통신 속도 설정
+  pinMode(TRIG_PIN, OUTPUT);   // 트리거 핀 출력 설정
+  pinMode(ECHO_PIN, INPUT);    // 에코 핀 입력 설정
+  
+  myServo.attach(SERVO_PIN);   // 서보모터 핀 연결
+  myServo.write(0);            // 서보모터 초기 위치(0도)
+}
+
+void loop() {
+  // 초음파 센서 트리거 신호 출력
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // 초음파 반사 신호 수신 시간 측정 (단위: microsecond)
+  long duration = pulseIn(ECHO_PIN, HIGH);
+  
+  // 시간을 거리(cm)로 환산
+  int distance = duration * 0.034 / 2;
+
+  // 시리얼 모니터로 측정 거리 확인
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // 물체가 10cm 이내로 접근한 경우
+  if (distance > 0 && distance <= 10) {
+    myServo.write(90); // 분류 동작 (90도 회전)
+    delay(1000);       // 1초간 유지
+  } else {
+    myServo.write(0);  // 대기 위치 (0도 복귀)
+  }
+
+  delay(100); // 0.1초 간격 측정
+}
